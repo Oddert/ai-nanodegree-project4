@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang='en'>
 <head>
-	<meta charset='UTF-8'>
+	<meta charset='utf-8'>
 	<meta name='viewport' content='width=device-width, initial-scale=1.0'>
 	<title>Real Estate Agent | Nano Degree Project 4</title>
 	<link rel='stylesheet' type='text/css' href='semantic/dist/semantic.min.css'>
@@ -14,16 +14,33 @@
 </head>
 <body>
 	<main>
-		<div class='title-bg' aria-hidden></div>
+		<div class='title-bg' aria-hidden='true'></div>
+		<button class='home hidden' title='home'>
+			<img alt='' height='26px' width='26px' src='/static/img/icon-home.svg' />
+		</button>
 		<div class='title-section'>
 			<span class='title-wrapper'>
 				<h1 class='title'>Hello! Welcome to the Fake Estate bot</h1>
-				<span aria-hidden class='decorative-cursor'>_</span>
+				<span aria-hidden='true' class='decorative-cursor'>_</span>
 			</span>
 			<p class='subtitle'>Please answer a few questions to tailor your results</p>
 		</div>
 		<div class='entry-buttons'>
 			<button class='entry-buttons_begin'>Begin your search</button>
+		</div>
+		<div class='prompt-response hidden'>
+			<div class='history'>
+				<p class='message system'>Lorem ipsum dolor sit amet consectetur adipisicing elit. Provident dolores atque deserunt non doloribus neque similique eos? Quis asperiores, dicta laborum tempora, cum provident voluptates, minus maiores corrupti ad ut.</p>
+				<p class='message user'>Lorem ipsum dolor sit amet consectetur adipisicing elit. Provident dolores atque deserunt non doloribus neque similique eos? Quis asperiores, dicta laborum tempora, cum provident voluptates, minus maiores corrupti ad ut.</p>
+			</div>
+			<div class='prompt'>
+				<form class='prompt-form'>
+					<textarea class='user-prompt' rows='1' type='text'></textarea>
+					<button aria-label='send response' type='submit'>
+						Send
+					</button>
+				</form>
+			</div>
 		</div>
 	</main>
 </body>

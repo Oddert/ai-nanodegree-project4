@@ -37,15 +37,18 @@ main.expanded .subtitle {
 	opacity: 1;
 }
 
-button {
+button, input, textarea {
 	background: #222;
 	border: 2px solid #ecf0f1;
 	border-radius: 4px;
 	color: #ecf0f1;
 	padding: 16px 32px;
 	font-size: 16px;
-	cursor: pointer;
 	transition: 0.1s linear;
+}
+
+button {
+	cursor: pointer;
 }
 
 button:hover {
@@ -72,6 +75,19 @@ button:active {
 	100% {
 		opacity: 0;
 	}
+}
+
+.hidden {
+	display: none !important;
+}
+
+.home {
+	position: fixed;
+	top: 65px;
+	left: 30px;
+	z-index: 1;
+	border: none;
+	background-color: transparent;
 }
 
 .title-bg {
@@ -120,4 +136,43 @@ button:active {
 	display: flex;
 	align-items: flex-start;
 	transition: .2s linear;
+}
+
+.prompt-response {
+	display: grid;
+	grid-template-columns: 1fr;
+	grid-template-rows: 1fr auto;
+	width: 950px;
+	margin: 0 auto;
+	height: 100%;
+	overflow: auto;
+}
+
+.prompt {
+	position: sticky;
+	bottom: 0;
+}
+
+.prompt-form {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	grid-gap: 16px;
+	padding: 16px;
+}
+
+.message {
+	background: #3b3b3b;
+	width: 85%;
+	padding: 16px 32px;
+	border-radius: 4px;
+}
+
+.message.system {
+	background: #3b3b3b;
+	margin-right: auto;
+}
+
+.message.user {
+	background: #235163;
+	margin-left: auto;
 }
