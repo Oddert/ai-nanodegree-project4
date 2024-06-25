@@ -4,14 +4,37 @@ import uvicorn
 
 from langchain.llms import OpenAI
 
+import lancedb
+import tiktoken
+import pandas as pd
+
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from transformers import AutoTokenizer
+
+from config import TABLE_NAME, LISTINGS_RAW_FILENAME
 
 from routes.home import router as home
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+	# load db
+	df = pd.read_csv(f'./{LISTINGS_RAW_FILENAME}')
+	# tokeniser = tiktoken.get_encoding('cl100k_base')
+	tokeniser = AutoTokenizer.from_pretrained('distilbert-base-uncased')
+	df['vector'] = [tokeniser.encode(x) for x in df['description']]
+	print(df)
+	db = lancedb.connect('./lancedb')
+	db.create_table(TABLE_NAME, df, exist_ok=True, on_bad_vectors='fill')
+	table = db.open_table(TABLE_NAME)
+	print(table.search('bike lanes').limit(1))
+	yield
+	# close db connection
+
+app = FastAPI(lifespan=lifespan)
 
 templates = Jinja2Templates(directory='templates')
 

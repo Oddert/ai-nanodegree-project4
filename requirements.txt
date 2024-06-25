@@ -10,3 +10,6 @@ jupyter==1.0.0
 tiktoken==0.4.0
 fastapi
 uvicorn
+pandas
+lancedb
+tiktoken
