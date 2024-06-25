@@ -1,13 +1,13 @@
 # Udemy AI Nano Degree - Project 4
 
-## Real Estate Assitant
+## Real Estate Assistant
 
-### Submission Files
+### Submission
 
-Main submission is *__`project.ipynb`__*.
+Main submission is *__`home_match.py`__*.
 
 ### Generated Listings
 
 Listings created by the LLM are filed in `.txt` files under `generated-listings/`.
 
-A few propmpts were used with smehat contstrained results each time, I have combined these into the actual listings file listings.txt
+A few prompts were used with somewhat constrained results each time, I have combined these into the actual listings file listings.txt
