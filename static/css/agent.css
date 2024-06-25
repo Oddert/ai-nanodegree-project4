@@ -59,6 +59,22 @@ button:active {
 	background: #8b8b8b;
 }
 
+button.contained {
+    background: #ecf0f1;
+    color: #000;
+    font-weight: bold;
+}
+
+button.contained:hover {
+	background: #8b8b8b;
+	color: #ecf0f1;
+}
+
+button.contained:active {
+	background: #333333;
+	color: #ecf0f1;
+}
+
 @keyframes blink {
 	0% {
 		opacity: 0;

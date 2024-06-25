@@ -9,6 +9,7 @@ const homeButton = document.querySelector('button.home')
 const entryButtons = document.querySelector('.entry-buttons')
 const promptResponseBox = document.querySelector('.prompt-response')
 const promptForm = document.querySelector('.prompt-response form')
+const userPromptMessage = promptForm.querySelector('textarea')
 const cursorEffect = document.querySelector('.decorative-cursor')
 const history = document.querySelector('.history')
 
@@ -37,6 +38,9 @@ const questionPrompts = {
 		},
 	],
 }
+
+let acceptUserResponse = true;
+let finishButtonsActive = false;
 
 const write = (
 	target,
@@ -103,15 +107,62 @@ const nextQuestion = () => {
 	writeMessage(question.message, true)
 }
 
+const createFinishedButtons = () => {
+	const container = document.createElement('div')
+	const acceptButton = document.createElement('button')
+	const startAgainButton = document.createElement('button')
+	
+	finishButtonsActive = true
+
+	acceptButton.textContent = 'Search'
+	startAgainButton.textContent = 'Start Over'
+
+	acceptButton.onclick = () => console.log('FETCH')
+	startAgainButton.onclick = () => {
+		questionPrompts.questions.forEach((question) => question.value = '')
+		questionPrompts.step = 0
+		acceptUserResponse = true
+		writeMessage('No problem! Lets start again...', true)
+		setTimeout(() => writeMessage(
+			questionPrompts.questions[questionPrompts.step].message,
+			true
+		), 2000)
+		container.remove()
+		finishButtonsActive = false
+	}
+
+	acceptButton.style.marginLeft = '20px'
+	acceptButton.classList.add('contained')
+
+	container.appendChild(startAgainButton)
+	container.appendChild(acceptButton)
+	history.appendChild(container)
+	promptResponseBox.scrollTop = promptResponseBox.scrollHeight
+}
+
 const handleUserResponse = () => {
-	const userPromptMessage = promptForm.querySelector('textarea')
-	questionPrompts.questions[questionPrompts.step].value = userPromptMessage.value
-	writeMessage(userPromptMessage.value)
-	setTimeout(() =>
-		nextQuestion(userPromptMessage.value),
-		1000,
-	)
-	userPromptMessage.value = ''
+	if (userPromptMessage.value === '') {
+		return
+	}
+
+	if (acceptUserResponse) {
+		questionPrompts.questions[questionPrompts.step].value = userPromptMessage.value
+		writeMessage(userPromptMessage.value)
+		userPromptMessage.value = ''
+	}
+
+	console.log(questionPrompts.step + 1, questionPrompts.questions.length), questionPrompts.step >= questionPrompts.questions.length
+	if (questionPrompts.step + 1 >= questionPrompts.questions.length) {
+		if (!finishButtonsActive) {
+			acceptUserResponse = false
+			createFinishedButtons()
+		}
+	} else {
+		setTimeout(() =>
+			nextQuestion(userPromptMessage.value),
+			1000,
+		)
+	}
 }
 
 const bindEventListeners = () => {
@@ -119,6 +170,12 @@ const bindEventListeners = () => {
 	homeButton.onclick = toggleExpanded
 	promptForm.onsubmit = (e) => e.preventDefault()
 	promptResponseBox.querySelector('button[type=submit]').onclick = handleUserResponse
+	userPromptMessage.addEventListener('keypress', (e) => {
+		if (e.key === 'Enter') {
+			e.preventDefault()
+			handleUserResponse()
+		}
+	})
 }
 
 const beingLandingTitleAnimation = () => {
