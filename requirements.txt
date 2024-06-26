@@ -14,3 +14,6 @@ pandas
 lancedb
 tiktoken
 pyarrow
+chromadb
+sentence-transformers
+

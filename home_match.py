@@ -15,6 +15,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 from transformers import AutoTokenizer
 
 from config import TABLE_NAME, LISTINGS_RAW_FILENAME
@@ -89,6 +90,20 @@ def one(request: Request):
 	# query = table.search('bike lanes').limit(1).to_list()
 	query = table.search(tokeniser.encode('bike lanes', padding='max_length')).limit(1).to_list()
 	return str(query)
+
+class RecommenderRequest(BaseModel):
+	transport: str
+	location: str
+	size: str
+
+@app.post('/recommender')
+def get_recommendations(preferences: RecommenderRequest):
+	print(preferences)
+	db = lancedb.connect('./lancedb')
+	table = db.open_table(TABLE_NAME)
+	query_str = f'{preferences.transport} {preferences.size} {preferences.location}'
+	query = table.search(tokeniser.encode(query_str, padding='max_length')).limit(1).to_list()
+	return query
 
 app.include_router(home, tags=['home'])
 
