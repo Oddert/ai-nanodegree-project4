@@ -13,3 +13,4 @@ uvicorn
 pandas
 lancedb
 tiktoken
+pyarrow
