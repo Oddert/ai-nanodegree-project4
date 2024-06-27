@@ -164,6 +164,7 @@ cython_debug/
 # User added
 lancedb/
 lancedb_example/
+listings-db/
 test.py
 *.temp*
 envfile.ini

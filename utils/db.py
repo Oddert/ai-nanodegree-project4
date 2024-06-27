@@ -8,6 +8,8 @@ import chromadb
 from chromadb.utils import embedding_functions
 from uuid import uuid4 as uuid
 
+from config import DB_SAVE_NAME
+
 os.path.dirname(sys.executable)
 
 class ChromaDb():
@@ -18,14 +20,14 @@ class ChromaDb():
 		self.embedding_function = None
 
 	def create_client(self):
-		self.client = chromadb.Client()
+		self.client = chromadb.PersistentClient(path=DB_SAVE_NAME)
 
 	def create_collection(self, collection_name: str):
 		self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
 			model_name='all-mpnet-base-v2',
 		)
 		self.collection_name = collection_name
-		self.collection = self.client.create_collection(
+		self.collection = self.client.get_or_create_collection(
 			name='properties',
 			embedding_function=self.embedding_function,
 		)
