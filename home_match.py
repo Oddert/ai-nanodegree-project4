@@ -1,27 +1,31 @@
 '''Entry point for the application.'''
+# pylint: disable=broad-exception-caught
 import uvicorn
 
-# from langchain.llms import OpenAI
-
 import pandas as pd
+import openai
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from loguru import logger
 from pydantic import BaseModel
 # from transformers import AutoTokenizer
 
 from config import (
 	TABLE_NAME,
 	LISTINGS_RAW_FILENAME,
-	system_prompt,
+	SYSTEM_PROMPT,
+	openai_api_key,
 )
 
 from utils.db import db
 
 from routes.home import router as home
+
+openai.api_key = openai_api_key
 
 # # tokeniser = tiktoken.get_encoding('cl100k_base')
 # tokeniser = AutoTokenizer.from_pretrained('gpt2')
@@ -65,7 +69,7 @@ class RecommenderRequest(BaseModel):
 @server.post('/recommender')
 def get_recommendations(preferences: RecommenderRequest):
 	'''Main endpoint for the agent. Provides RAG responses for the listing database.'''
-	print(preferences)
+	logger.debug(preferences)
 	query_str = f'{preferences.transport} {preferences.size} {preferences.community} {preferences.amenities}'
 	result = db.search(search_term=query_str)
 
@@ -84,7 +88,23 @@ PROPERTY LISTING:
 {result['documents'][0][0]}
 	'''
 
-	return prompt
+	try:
+		llm_response = openai.ChatCompletion.create(
+			model='gpt-3.5-turbo',
+			messages=[
+				{ 'role': 'system', 'content': SYSTEM_PROMPT },
+				{ 'role': 'user', 'content': prompt },
+			],
+			# temperature=1,
+			# max_tokens=256,
+			# top_p=1,
+			# frequency_penalty=0,
+			# presence_penalty=0,
+		)
+
+		return llm_response.choices[0].message.content
+	except Exception as e:
+		return str(e)
 
 server.include_router(home, tags=['home'])
 

@@ -15,4 +15,5 @@ tiktoken
 pyarrow
 chromadb
 sentence-transformers
-
+loguru
+configparser

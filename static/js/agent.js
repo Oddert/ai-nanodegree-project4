@@ -1,8 +1,7 @@
 const WRITE_MIN_DELAY = 10
 const WRITE_DELAY_RANGE = 120
 
-// TODO: complete this prompt
-const WELCOME_MESSAGE = 'To begin finding your property please...'
+const WELCOME_MESSAGE = 'To begin finding your property I\'ll first need to ask you a few questions...'
 
 const beginButton = document.querySelector('button.entry-buttons_begin')
 const homeButton = document.querySelector('button.home')
@@ -107,7 +106,7 @@ const nextQuestion = () => {
 	writeMessage(question.message, true)
 }
 
-const handleSubmitResponse = async () => {
+const handleSubmitResponse = async (container) => {
 	writeMessage('Great! Let me have a look and see what I can find...', true)
 	const response = await fetch(
 		'/recommender',
@@ -139,7 +138,7 @@ const handleSubmitResponse = async () => {
 	finishButtonsActive = false
 }
 
-const handleStartAgain = () => {
+const handleStartAgain = (container) => {
 	questionPrompts.questions.forEach((question) => question.value = '')
 	questionPrompts.step = 0
 	acceptUserResponse = true
@@ -164,8 +163,8 @@ const createFinishedButtons = () => {
 	acceptButton.textContent = 'Begin Search'
 	startAgainButton.textContent = 'Start Over'
 
-	acceptButton.onclick = handleSubmitResponse
-	startAgainButton.onclick = handleStartAgain
+	acceptButton.onclick = () => handleSubmitResponse(container)
+	startAgainButton.onclick = () => handleStartAgain(container)
 
 	acceptButton.style.marginLeft = '20px'
 	acceptButton.classList.add('contained')

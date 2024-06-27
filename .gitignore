@@ -166,3 +166,4 @@ lancedb/
 lancedb_example/
 test.py
 *.temp*
+envfile.ini
