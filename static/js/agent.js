@@ -133,7 +133,7 @@ const handleSubmitResponse = async (container) => {
 	)
 	const llmAnswer = await response.json()
 	console.log(llmAnswer)
-	writeMessage(llmAnswer, true, () => 0 + Math.random() * 10)
+	writeMessage(llmAnswer.response, true, () => 0 + Math.random() * 10)
 	container.remove()
 	finishButtonsActive = false
 }

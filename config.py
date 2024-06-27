@@ -5,6 +5,7 @@ config.read('envfile.ini', encoding='utf-8')
 config_default = config['DEFAULT']
 
 openai_api_key = config_default['OPENAI_API_KEY']
+port = config_default['PORT'] if 'PORT' in config_default else '8001'
 
 TABLE_NAME = 'listings'
 LISTINGS_RAW_FILENAME = 'generated-listings.csv'
