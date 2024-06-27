@@ -3,11 +3,7 @@ import uvicorn
 
 # from langchain.llms import OpenAI
 
-# import lancedb
-# import tiktoken
 import pandas as pd
-# import pyarrow as pa
-# import pyarrow.parquet as pq
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
@@ -20,6 +16,7 @@ from pydantic import BaseModel
 from config import (
 	TABLE_NAME,
 	LISTINGS_RAW_FILENAME,
+	system_prompt,
 )
 
 from utils.db import db
@@ -60,19 +57,34 @@ def one(request: Request):
 class RecommenderRequest(BaseModel):
 	'''Request model for the agent recommender route.'''
 	transport: str
-	location: str
+	community: str
 	size: str
+	amenities: str
+
 
 @server.post('/recommender')
 def get_recommendations(preferences: RecommenderRequest):
 	'''Main endpoint for the agent. Provides RAG responses for the listing database.'''
 	print(preferences)
-	# db = lancedb.connect('./lancedb')
-	# table = db.open_table(TABLE_NAME)
-	query_str = f'{preferences.transport} {preferences.size} {preferences.location}'
-	# query = table.search(tokeniser.encode(query_str, padding='max_length')).limit(1).to_list()
+	query_str = f'{preferences.transport} {preferences.size} {preferences.community} {preferences.amenities}'
 	result = db.search(search_term=query_str)
-	return result
+
+	prompt = f'''
+You will be provided a set of USER PREFERENCES for a property and also a PROPERTY LISTING, chosen from our recommendation system.
+Please write a description for the listing, tailored to the specific USER PREFERENCES.
+Please enhance and enrich key points within the description, without inventing or hallucinating any new information.
+
+USER PREFERENCES:
+Transport & Connectivity: {preferences.transport}
+Size, bedroom and bathroom count, any other features: {preferences.size}
+Community: {preferences.community}
+Amenities: {preferences.amenities}
+
+PROPERTY LISTING:
+{result['documents'][0][0]}
+	'''
+
+	return prompt
 
 server.include_router(home, tags=['home'])
 

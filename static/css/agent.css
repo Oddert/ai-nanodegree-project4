@@ -181,6 +181,7 @@ button.contained:active {
 	width: 85%;
 	padding: 16px 32px;
 	border-radius: 4px;
+	white-space: pre-line;
 }
 
 .message.system {

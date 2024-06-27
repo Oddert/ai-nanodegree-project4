@@ -17,22 +17,22 @@ const questionPrompts = {
 	step: 0,
 	questions: [
 		{
-			message: 'what transport?',
+			message: 'What are you\'re transport priorities? What connections would you need and how would you be looking to get around?',
 			variableKey: 'transport',
 			value: null,
 		},
 		{
-			message: 'what size?',
+			message: 'What size of a property would you be looking for? How many bedrooms and bathrooms? Any other must-haves?',
 			variableKey: 'size',
 			value: null,
 		},
 		{
-			message: 'what community?',
+			message: 'How would you describe the community and local scene in your perfect world?',
 			variableKey: 'community',
 			value: null,
 		},
 		{
-			message: 'what amenities?',
+			message: 'Are there any amenities or local features that you\'d need near by?',
 			variableKey: 'amenities',
 			value: null,
 		},
@@ -107,29 +107,65 @@ const nextQuestion = () => {
 	writeMessage(question.message, true)
 }
 
+const handleSubmitResponse = async () => {
+	writeMessage('Great! Let me have a look and see what I can find...', true)
+	const response = await fetch(
+		'/recommender',
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(
+					questionPrompts.questions.reduce(
+					(accumulator, question) => {
+						accumulator[question.variableKey] = question.value
+						return accumulator
+					},
+					{
+						transport: null,
+						community: null,
+						size: null,
+						amenities: null,
+					}
+				)
+			)
+		},
+	)
+	const llmAnswer = await response.json()
+	console.log(llmAnswer)
+	writeMessage(llmAnswer, true, () => 0 + Math.random() * 10)
+	container.remove()
+	finishButtonsActive = false
+}
+
+const handleStartAgain = () => {
+	questionPrompts.questions.forEach((question) => question.value = '')
+	questionPrompts.step = 0
+	acceptUserResponse = true
+	writeMessage('No problem! Lets start again...', true)
+	setTimeout(() => writeMessage(
+		questionPrompts.questions[questionPrompts.step].message,
+		true
+	), 2000)
+	container.remove()
+	finishButtonsActive = false
+}
+
 const createFinishedButtons = () => {
+	write('Thanks for that, are you happy with these answers of would you like to start over?', true)
+
 	const container = document.createElement('div')
 	const acceptButton = document.createElement('button')
 	const startAgainButton = document.createElement('button')
 	
 	finishButtonsActive = true
 
-	acceptButton.textContent = 'Search'
+	acceptButton.textContent = 'Begin Search'
 	startAgainButton.textContent = 'Start Over'
 
-	acceptButton.onclick = () => console.log('FETCH')
-	startAgainButton.onclick = () => {
-		questionPrompts.questions.forEach((question) => question.value = '')
-		questionPrompts.step = 0
-		acceptUserResponse = true
-		writeMessage('No problem! Lets start again...', true)
-		setTimeout(() => writeMessage(
-			questionPrompts.questions[questionPrompts.step].message,
-			true
-		), 2000)
-		container.remove()
-		finishButtonsActive = false
-	}
+	acceptButton.onclick = handleSubmitResponse
+	startAgainButton.onclick = handleStartAgain
 
 	acceptButton.style.marginLeft = '20px'
 	acceptButton.classList.add('contained')
@@ -151,7 +187,6 @@ const handleUserResponse = () => {
 		userPromptMessage.value = ''
 	}
 
-	console.log(questionPrompts.step + 1, questionPrompts.questions.length), questionPrompts.step >= questionPrompts.questions.length
 	if (questionPrompts.step + 1 >= questionPrompts.questions.length) {
 		if (!finishButtonsActive) {
 			acceptUserResponse = false
