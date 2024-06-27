@@ -80,3 +80,13 @@ Navigate to [http://localhost:8001/](http://localhost:8001/) by default.
 The application will prompt you with questions, answer each of these to create a specification. The system will then ask if you're happy with your choices or if you would like to start again to resubmit them.
 
 Hit "Begin Search" to send the request to the LLM interface and receive a generated response.
+
+## Credits
+
+Thank you to the authors of these resources for their help at various stages
+
+- [Getting Started with Chroma DB: A Beginner’s Tutorial by Random-log-int](https://medium.com/@pierrelouislet/getting-started-with-chroma-db-a-beginners-tutorial-6efa32300902)
+
+- [Embed vector database into your web app using LanceDB by Tevin Wang](https://medium.com/etoai/improving-llm-based-web-applications-with-easy-to-use-and-free-serverless-vector-database-lancedb-254e1442a9b0)
+
+- [Creating text dataset for LLM training using Lance - Lancedb Docs](https://lancedb.github.io/lance/examples/llm_dataset_creation.html)
