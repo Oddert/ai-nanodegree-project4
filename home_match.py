@@ -1,5 +1,8 @@
+
 '''Entry point for the application.'''
 # pylint: disable=broad-exception-caught
+import os
+
 import uvicorn
 
 import pandas as pd
@@ -12,13 +15,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from config import (
-	TABLE_NAME,
 	LISTINGS_RAW_FILENAME,
 	openai_api_key,
 	port,
 )
-
-from utils.db import db
 
 from routes.recommender import router as recommender
 
@@ -29,10 +29,8 @@ openai.api_key = openai_api_key
 async def lifespan(app: FastAPI):  # pylint: disable=unused-argument
 	'''Initialises the db instance.'''
 	df = pd.read_csv(f'./{LISTINGS_RAW_FILENAME}')
+	os.environ['OPENAI_API_KEY'] = openai_api_key
 	print(df)
-	db.create_client()
-	db.create_collection(TABLE_NAME)
-	db.add_many_documents(df['description'])
 	yield
 
 server = FastAPI(lifespan=lifespan)

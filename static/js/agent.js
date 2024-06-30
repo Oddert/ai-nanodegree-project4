@@ -38,7 +38,7 @@ const questionPrompts = {
 	],
 }
 
-let acceptUserResponse = true;
+let acceptUserResponse = false;
 let finishButtonsActive = false;
 
 const write = (
@@ -220,11 +220,26 @@ const beingLandingTitleAnimation = () => {
 }
 
 const conversationStart = () => {
-	setTimeout(() => writeMessage(WELCOME_MESSAGE, true), 3000)
-	setTimeout(() => writeMessage(
-		questionPrompts.questions[questionPrompts.step].message, true),
-		5000,
+	fetch(
+		'/recommender/questions',
+		{
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		}
 	)
+	.then((res) => res.json())
+	.then((res) => {
+		questionPrompts.questions = res
+		setTimeout(() => writeMessage(WELCOME_MESSAGE, true), 3000)
+		setTimeout(() => {
+			writeMessage(
+				questionPrompts.questions[questionPrompts.step].message,
+				true
+			)
+			acceptUserResponse = true
+		}, 5000)
+	})
 }
 
 const onLoad = () => {
