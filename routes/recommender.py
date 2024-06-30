@@ -1,15 +1,14 @@
-import openai
-# import pandas as pd
+'''Handles interactions with the LLM.'''
 
 from fastapi import APIRouter
 from loguru import logger
 from pydantic import BaseModel
 
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationChain
-from langchain_core.prompts import PromptTemplate
+from langchain.prompts import PromptTemplate
 from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.memory import (
 	CombinedMemory,
 	ConversationBufferMemory,
@@ -25,52 +24,43 @@ from config import (
 	SYSTEM_PROMPT,
 )
 
-from utils.db import db
-
 router = APIRouter()
-
 
 prompt_template = '''
 The following is a friendly conversation between a human and an AI. The AI is enthusiastic yet professional and does its best to answer questions with close attention paid to the user-provided context.
-The AI's job is to act as a real estate agent, finding listings tailored to the user's preferences by highlighting key features for the user.
-The AI must enhance specific features relating to the user's preferences, without inventing or hallucinating any new details.
-If these instructions are not met, the user will not be able to understand the AI's output.
+The AI's job is to act as a real estate agent, finding listings tailored to the user's preferences by highlighting key features for the user without inventing any new information.
 
 Summary of conversation:
-{history}
+{conversation_summary}
 
 Current conversation:
-{chat_history_lines}
+{agent_buffer_memory}
 
 Human: {input}
 AI:'''
 
-def get_plot_rating_instructions(db, question: str):
-	return f"""
-        =====================================
-    === START HOME MATCH FOR {question} ===
-    THe below found documents which is similar to the user preference.
-    {db.similarity_search(question, k=3)}
-    === END HOME MATCH SUMMARY ===
-    =====================================
 
-    RATING INSTRUCTIONS THAT MUST BE STRICTLY FOLLOWED:
-    AI will provide a highly personalized Home Recommendation based only on the buyer preferences summary human provided
-    and human answers to questions included with the context.
-    AI should be very sensible to human personal preferences captured in the answers to personal questions,
-    and should not be influenced by anything else.
-    AI will also build a persona for human based on human answers to questions, and use this persona to rate the home match.
+def get_plot_rating_instructions(listing: str):
+	'''Creates the initiator prompt.'''
+	return '''The user has now provided their preferences and a relevant listing has been found.
+The AI system will now respond with a summary description of the listing, highlighting features relevant to the user's preferences.
+The AI will not invent new details, hallucinate, or mislead the user.
+The AI will be given a response format to for the outline of a response to the user.
+Begin the response by addressing the user directly. End the response with "I hope you like this recommendation! Please feel free to search again."
 
-    OUTPUT FORMAT:
-    First, include that persona you came up with in the home recommendation. Describe the persona in a few sentences.
-    Explain how human preferences captured in the answers to personal questions influenced creation of this persona.
-    In addition, consider other similar features of home for this human that you might have as they might give you more information about human's preferences.
-    Your goal is to provide a home match recommendation that is as close as possible to the buyer preferences.
-    Remember that human buys home only few times in lifetime and wants to have their perfect home, so your recommendation should be as accurate as possible.
-    You will include a logical explanation for your recommendation based on human persona you've build and human responses to questions.
-    YOUR REVIEW MUST END WITH TEXT: Thank you for your Query
-    FOLLOW THE INSTRUCTIONS STRICTLY, OTHERWISE HUMAN WILL NOT BE ABLE TO UNDERSTAND YOUR RECOMMENDATION.
-"""
+RECOMMENDED PROPERTY LISTING: "{listing}"
+
+DETAILS TO INCLUDE IN THE RESPONSE:
+	1) Describe and summarise the listing you have found from the user's preferences.
+	2) List key features matching with the user preferences.
+	3) Mention details such as:
+		a. The number of bedrooms and bathrooms.
+		b. Transport options and infrastructure.
+		c. Location characteristics, nearby amenities.
+		d. Price.
+
+IMPORTANT: If these instructions are not followed, the user will not be able to understand the AI's response.
+'''
 
 
 class RecommenderRequest(BaseModel):
@@ -113,33 +103,17 @@ def get_recommendations(preferences: RecommenderRequest):
 	docs = split.split_documents(raw_listings.load())
 
 	new_db = Chroma.from_documents(docs, openai_embedding)
+	
+	query_str = f'{preferences.transport} {preferences.size} {preferences.community} {preferences.amenities}'
 
 	prompt = PromptTemplate(
-		input_variables=['history', 'input', 'chat_history_lines'],
+		input_variables=['conversation_summary', 'input', 'agent_buffer_memory'],
 		template=prompt_template,
-	)
-
-	# TODO: write
-	# question = 'I would like a property that is'
-
-	# search = new_db.similarity_search(question, k=3)
-	summary_memory = ConversationSummaryMemory(
-		buffer=f'The human answered {len(questions)} questions based on their preferences. Create a recommendation based on the preferences and found listing.',
-		input_key='input',
-		llm=model,
-		memory_key='agent_summary_memory',
-		return_messages=True,
 	)
 
 	history = ChatMessageHistory()
 
-	running_memory = ConversationBufferMemory(
-		chat_memory=history,
-		input_key='input',
-		memory_key='agent_buffer_memory',
-	)
-
-	memory = CombinedMemory(memories=[running_memory, summary_memory])
+	logger.debug(prompt)
 
 	history.add_user_message(
 		'You are and AI assistant that will recommend properties base on my preferences: '
@@ -154,40 +128,49 @@ def get_recommendations(preferences: RecommenderRequest):
 
 	for question in questions:
 		history.add_ai_message(question['message'])
-		history.add_ai_message(user_responses[question['variableKey']])
+		history.add_user_message(user_responses[question['variableKey']])
 
 	history.add_ai_message('Thank you, not please tell me a summary of the property you\'re considering and I can find a recommendation.')
 
+	summary_memory = ConversationSummaryMemory(
+		buffer=f'The human answered {len(questions)} questions based on their preferences. Create a recommendation based on the preferences and found listing.',
+		input_key='input',
+		llm=model,
+		memory_key='conversation_summary',
+		return_messages=True,
+	)
+
+	class TempBufferClass(ConversationBufferMemory):
+		def save_context(self, inputs, outputs):
+			input_str, output_str = self._get_input_output(inputs, outputs)
+			self.chat_memory.add_ai_message(output_str)
+
+	running_memory = TempBufferClass(
+		chat_memory=history,
+		input_key='input',
+		memory_key='agent_buffer_memory',
+	)
+
+	memory = CombinedMemory(memories=[running_memory, summary_memory])
+
 	conversation = ConversationChain(
 		llm=model,
-		verbose=True,
 		memory=memory,
 		prompt=prompt,
+		verbose=True,
 	)
 
-	return conversation.predict(
-		input=get_plot_rating_instructions(new_db, question)
+	found_documents = new_db.similarity_search(query_str)
+
+	logger.debug(found_documents)
+
+	chosen_document = found_documents[0].page_content
+
+	llm_response = conversation.predict(
+		input=get_plot_rating_instructions(chosen_document)
 	)
 
-	# try:
-	# 	llm_response = openai.ChatCompletion.create(
-	# 		model=model_name,
-	# 		messages=[
-	# 			{ 'role': 'system', 'content': SYSTEM_PROMPT },
-	# 			{ 'role': 'user', 'content': prompt },
-	# 		],
-	# 		# temperature=1,
-	# 		# max_tokens=256,
-	# 		# top_p=1,
-	# 		# frequency_penalty=0,
-	# 		# presence_penalty=0,
-	# 	)
-
-	# 	return {
-	# 		'response': llm_response.choices[0].message.content,
-	# 		'rawListing': result['documents'][0][0]
-	# 	}
-	# except Exception as e:
-	# 	return str(e)
-
-
+	return {
+		'response': llm_response.replace('RECOMMENDED PROPERTY LISTING:', ''),
+		'rawListing': chosen_document,
+	}
